@@ -14,7 +14,7 @@ class Script(PrometheusExporterScript):
 
     _metrics = [
         MetricConfig(
-            'task_wait_count', 'Number of tasks by wait queue.', 'gauge',
+            'task_wait_count', 'Number of tasks by wait queue', 'gauge',
             {'labels': ('process', 'wait_channel')})]
 
     def configure_argument_parser(self, parser):
