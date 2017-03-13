@@ -1,0 +1,2 @@
+prometheus-aioexporter
+-e git+https://github.com/albertodonato/lxstats#egg=lxstats
