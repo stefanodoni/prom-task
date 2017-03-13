@@ -1,0 +1,52 @@
+#!/usr/bin/env python3.5
+
+from collections import defaultdict
+
+from prometheus_aioexporter.script import PrometheusExporterScript
+from prometheus_aioexporter.metric import MetricConfig
+
+from lxstats.process.collection import Collection
+from lxstats.process.filter import CommandLineFilter
+
+
+class Script(PrometheusExporterScript):
+    '''Export task stats for processes.'''
+
+    _metrics = [
+        MetricConfig(
+            'task_wait_count', 'Number of tasks by wait queue.', 'gauge',
+            {'labels': ('process', 'wait_channel')})]
+
+    def configure_argument_parser(self, parser):
+        parser.add_argument(
+            'process_regexp', help='Regexp matching process names')
+
+    def configure(self, args):
+        self.process_regexp = args.process_regexp
+        self.create_metrics(self._metrics)
+
+    def _create_application(self, args):
+        app = super()._create_application(args)
+        app.set_metric_update_handler(self._update_metrics)
+        return app
+
+    def _update_metrics(self, metrics):
+        collection = Collection()
+        collection.add_filter(CommandLineFilter(self.process_regexp))
+        metric = metrics['task_wait_count']
+
+        stats = defaultdict(int)
+        for process in collection:
+            comm = process.get('comm')
+            for task in process.tasks():
+                task.collect_stats()
+                wchan = task.get('wchan')
+                stats[(comm, wchan)] += 1
+
+        for (comm, wchan), count in stats.items():
+            metric.labels(process=comm, wait_channel=wchan).set(count)
+
+
+if __name__ == '__main__':
+    script = Script()
+    script()
