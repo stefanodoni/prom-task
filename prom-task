@@ -41,6 +41,9 @@ class Script(PrometheusExporterScript):
             for task in process.tasks():
                 task.collect_stats()
                 wchan = task.get('wchan')
+                self.logger.debug(
+                    'Updating stat: pid {}, tid {}, wchan {}'.format(
+                        process.pid, task.tid, wchan))
                 stats[(comm, wchan)] += 1
 
         for (comm, wchan), count in stats.items():
